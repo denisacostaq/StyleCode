@@ -9,6 +9,50 @@
     }
  </style>
 
+Background
+==========
+
+ C++ is the main development language used by many of Google's open-source projects. As every C++ programmer knows, the language has many powerful features, but this power brings with it complexity, which in turn can make code more bug-prone and harder to read and maintain.
+
+The goal of this guide is to manage this complexity by describing in detail the dos and don'ts of writing C++ code. These rules exist to keep the code base manageable while still allowing coders to use C++ language features productively.
+
+Style, also known as readability, is what we call the conventions that govern our C++ code. The term Style is a bit of a misnomer, since these conventions cover far more than just source file formatting.
+
+Most open-source projects developed by Google conform to the requirements in this guide.
+
+Note that this guide is not a C++ tutorial: we assume that the reader is familiar with the language. 
+
+
+
+
+Goals of the Style Guide
+========================
+
+Why do we have this document?
+
+There are a few core goals that we believe this guide should serve. These are the fundamental whys that underlie all of the individual rules. By bringing these ideas to the fore, we hope to ground discussions and make it clearer to our broader community why the rules are in place and why particular decisions have been made. If you understand what goals each rule is serving, it should be clearer to everyone when a rule may be waived (some can be), and what sort of argument or alternative would be necessary to change a rule in the guide.
+
+The goals of the style guide as we currently see them are as follows:
+
+- Style rules should pull their weight
+   The benefit of a style rule must be large enough to justify asking all of our engineers to remember it. The benefit is measured relative to the codebase we would get without the rule, so a rule against a very harmful practice may still have a small benefit if people are unlikely to do it anyway. This principle mostly explains the rules we don’t have, rather than the rules we do: for example, goto contravenes many of the following principles, but is already vanishingly rare, so the Style Guide doesn’t discuss it.
+- Optimize for the reader, not the writer
+   Our codebase (and most individual components submitted to it) is expected to continue for quite some time. As a result, more time will be spent reading most of our code than writing it. We explicitly choose to optimize for the experience of our average software engineer reading, maintaining, and debugging code in our codebase rather than ease when writing said code. "Leave a trace for the reader" is a particularly common sub-point of this principle: When something surprising or unusual is happening in a snippet of code (for example, transfer of pointer ownership), leaving textual hints for the reader at the point of use is valuable (std::unique_ptr demonstrates the ownership transfer unambiguously at the call site). 
+- Be consistent with existing code
+    Using one style consistently through our codebase lets us focus on other (more important) issues. Consistency also allows for automation: tools that format your code or adjust your #includes only work properly when your code is consistent with the expectations of the tooling. In many cases, rules that are attributed to "Be Consistent" boil down to "Just pick one and stop worrying about it"; the potential value of allowing flexibility on these points is outweighed by the cost of having people argue over them. 
+- Be consistent with the broader C++ community when appropriate
+    Consistency with the way other organizations use C++ has value for the same reasons as consistency within our code base. If a feature in the C++ standard solves a problem, or if some idiom is widely known and accepted, that's an argument for using it. However, sometimes standard features and idioms are flawed, or were just designed without our codebase's needs in mind. In those cases (as described below) it's appropriate to constrain or ban standard features. In some cases we prefer a homegrown or third-party library over a library defined in the C++ Standard, either out of perceived superiority or insufficient value to transition the codebase to the standard interface.
+- Avoid surprising or dangerous constructs
+    C++ has features that are more surprising or dangerous than one might think at a glance. Some style guide restrictions are in place to prevent falling into these pitfalls. There is a high bar for style guide waivers on such restrictions, because waiving such rules often directly risks compromising program correctness. 
+- Avoid constructs that our average C++ programmer would find tricky or hard to maintain
+    C++ has features that may not be generally appropriate because of the complexity they introduce to the code. In widely used code, it may be more acceptable to use trickier language constructs, because any benefits of more complex implementation are multiplied widely by usage, and the cost in understanding the complexity does not need to be paid again when working with new portions of the codebase. When in doubt, waivers to rules of this type can be sought by asking your project leads. This is specifically important for our codebase because code ownership and team membership changes over time: even if everyone that works with some piece of code currently understands it, such understanding is not guaranteed to hold a few years from now.
+- Be mindful of our scale
+    With a codebase of 100+ million lines and thousands of engineers, some mistakes and simplifications for one engineer can become costly for many. For instance it's particularly important to avoid polluting the global namespace: name collisions across a codebase of hundreds of millions of lines are difficult to work with and hard to avoid if everyone puts things into the global namespace.
+- Concede to optimization when necessary
+    Performance optimizations can sometimes be necessary and appropriate, even when they conflict with the other principles of this document.
+
+The intent of this document is to provide maximal guidance with reasonable restriction. As always, common sense and good taste should prevail. By this we specifically refer to the established conventions of the entire Google C++ community, not just your personal preferences or those of your team. Be skeptical about and reluctant to use clever or unusual constructs: the absence of a prohibition is not the same as a license to proceed. Use your judgment, and if you are unsure, please don't hesitate to ask your project leads to get additional input.
+
 Header Files
 =============
 
@@ -73,7 +117,7 @@ A "forward declaration" is a declaration of a class, function, or template witho
 **Cons:**
 
 - Forward declarations can hide a dependency, allowing user code to skip necessary recompilation when headers change.
-_ A forward declaration may be broken by subsequent changes to the library. Forward declarations of functions and templates can prevent the header owners from making otherwise-compatible changes to their APIs, such as widening a parameter type, adding a template parameter with a default value, or migrating to a new namespace.
+- A forward declaration may be broken by subsequent changes to the library. Forward declarations of functions and templates can prevent the header owners from making otherwise-compatible changes to their APIs, such as widening a parameter type, adding a template parameter with a default value, or migrating to a new namespace.
 - Forward declaring symbols from namespace `std::` yields undefined behavior.
 - It can be difficult to determine whether a forward declaration or a full `#include` is needed. Replacing an `#include` with a forward declaration can silently change the meaning of code:
 
@@ -97,8 +141,8 @@ _ A forward declaration may be broken by subsequent changes to the library. Forw
 **Decision:**
 
 - Try to avoid forward declarations of entities defined in another project.
-- When using a function declared in a header file, always #include that header.
-- When using a class template, prefer to #include its header file.
+- When using a function declared in a header file, always `#include` that header.
+- When using a class template, prefer to `#include` its header file.
 
 Please see [Names and Order of Includes](#names-and-order-of-includes) for rules about when to `#include` a header.
 
@@ -156,7 +200,7 @@ With the preferred ordering, if `dir2/foo2.h` omits any necessary includes, the 
 
 Within each section the includes should be ordered alphabetically. Note that older code might not conform to this rule and should be fixed when convenient.
 
-You should include all the headers that define the symbols you rely upon, except in the unusual case of [forward declaration](#forward-declarations). If you rely on symbols from bar.h, don't count on the fact that you included foo.h which (currently) includes bar.h: include bar.h yourself, unless foo.h explicitly demonstrates its intent to provide you the symbols of bar.h. However, any includes present in the related header do not need to be included again in the related cc (i.e., foo.cc can rely on foo.h's includes).
+You should include all the headers that define the symbols you rely upon, except in the unusual case of [forward declaration](#forward-declarations). If you rely on symbols from `bar.h`, don't count on the fact that you included `foo.h` which (currently) includes `bar.h`: include `bar.h` yourself, unless `foo.h` explicitly demonstrates its intent to provide you the symbols of `bar.h`. However, any includes present in the related header do not need to be included again in the related `cc` (i.e., `foo.cc` can rely on `foo.h`'s includes).
 
 For example, the includes in `google-awesome-project/src/foo/internal/fooserver.cc` might look like this:
 
@@ -314,7 +358,7 @@ namespace a {
 ~~~
 </div>
 
-- Do not declare anything in namespace std, including forward declarations of standard library classes. Declaring entities in namespace std is undefined behavior, i.e., not portable. To declare entities from the standard library, include the appropriate header file.
+- Do not declare anything in `namespace std`, including forward declarations of standard library classes. Declaring entities in `namespace std` is undefined behavior, i.e., not portable. To declare entities from the standard library, include the appropriate header file.
 
 - You may not use a using-directive to make all names from a namespace available.
 
@@ -509,7 +553,7 @@ Constructors should never call virtual functions. If appropriate for your code ,
 Implicit Conversions
 --------------------
 
-Do not define implicit conversions. Use the explicit keyword for conversion operators and single-argument constructors.
+Do not define implicit conversions. Use the `explicit` keyword for conversion operators and single-argument constructors.
 
 **Definition:**
 
@@ -517,7 +561,7 @@ Implicit conversions allow an object of one type (called the source type) to be 
 
 In addition to the implicit conversions defined by the language, users can define their own, by adding appropriate members to the class definition of the source or destination type. An implicit conversion in the source type is defined by a type conversion operator named after the destination type (e.g. `operator bool()`). An implicit conversion in the destination type is defined by a converting constructor, which is a constructor that can take the source type as its only argument. Note that a multi-parameter constructor can still be a converting constructor, if all but the first parameter have default values.
 
-The explicit keyword can be applied to a constructor or (since C++11) a conversion operator, to ensure that it can only be used when the destination type is explicit at the point of use, e.g. with a cast. This applies not only to implicit conversions, but to C++11's list initialization syntax:
+The `explicit` keyword can be applied to a constructor or (since C++11) a conversion operator, to ensure that it can only be used when the destination type is explicit at the point of use, e.g. with a cast. This applies not only to implicit conversions, but to C++11's list initialization syntax:
 
 ~~~cpp
 class Foo {
@@ -553,12 +597,14 @@ This kind of code isn't technically an implicit conversion, but the language tre
 
 Type conversion operators, and constructors that are callable with a single argument, must be marked `explicit` in the class definition. As an exception, copy and move constructors should not be `explicit`, since they do not perform type conversion. Implicit conversions can sometimes be necessary and appropriate for types that are designed to transparently wrap other types. In that case, contact your project leads to request a waiver of this rule.
 
-Constructors that cannot be called with a single argument should usually omit explicit. Constructors that take a single `std::initializer_list` parameter should also omit explicit, in order to support copy-initialization (e.g. `MyType m = {1, 2};`).
+Constructors that cannot be called with a single argument should usually omit `explicit`. Constructors that take a single `std::initializer_list` parameter should also omit `explicit`, in order to support copy-initialization (e.g. `MyType m = {1, 2};`).
 
 
 
 Copyable and Movable Types
 --------------------------
+
+<a name="copy-constructors"></a>
 
 Support copying and/or moving if it makes sense for your type. Otherwise, disable the implicitly generated special functions that perform copies and moves.
 
@@ -660,15 +706,15 @@ This is especially useful when Derived's constructors don't have to do anything 
 
 **Pros:**
 
-Delegating and inheriting constructors reduce verbosity and boilerplate, which can improve readability.
+- Delegating and inheriting constructors reduce verbosity and boilerplate, which can improve readability.
 
-Delegating constructors are familiar to Java programmers.
+- Delegating constructors are familiar to Java programmers.
 
 **Cons:**
 
-It's possible to approximate the behavior of delegating constructors by using a helper function.
+- It's possible to approximate the behavior of delegating constructors by using a helper function.
 
-Inheriting constructors may be confusing if a derived class introduces new member variables, since the base class constructor doesn't know about them.
+- Inheriting constructors may be confusing if a derived class introduces new member variables, since the base class constructor doesn't know about them.
 
 **Decision:**
 
@@ -676,14 +722,16 @@ Use delegating and inheriting constructors when they reduce boilerplate and impr
 
 
 
+<a name="structs-vs-classes"></a>
+
 Structs vs. Classes
 -------------------
 
-Use a struct only for passive objects that carry data; everything else is a class.
+Use a `struct` only for passive objects that carry data; everything else is a `class`.
 
 The `struct` and `class` keywords behave almost identically in C++. We add our own semantic meanings to each keyword, so you should use the appropriate keyword for the data-type you're defining.
 
-structs should be used for passive objects that carry data, and may have associated constants, but lack any functionality other than access/setting the data members. The accessing/setting of fields is done by directly accessing the fields rather than through method invocations. Methods should not provide behavior but should only be used to set up the data members, e.g., constructor, destructor, `Initialize()`, `Reset()`, `Validate()`.
+Structs should be used for passive objects that carry data, and may have associated constants, but lack any functionality other than access/setting the data members. The accessing/setting of fields is done by directly accessing the fields rather than through method invocations. Methods should not provide behavior but should only be used to set up the data members, e.g., constructor, destructor, `Initialize()`, `Reset()`, `Validate()`.
 
 If more functionality is required, a class is more appropriate. If in doubt, make it a class.
 
@@ -802,7 +850,7 @@ User-defined literals are a very concise notation for creating objects of user-d
 - Overuse of operators can lead to obfuscated code, particularly if the overloaded operator's semantics don't follow convention.
 - The hazards of function overloading apply just as much to operator overloading, if not more so.
 - Operator overloads can fool our intuition into thinking that expensive operations are cheap, built-in operations.
-- Finding the call sites for overloaded operators may requre a search tool that's aware of C++ syntax, rather than e.g. grep.
+- Finding the call sites for overloaded operators may require a search tool that's aware of C++ syntax, rather than e.g. grep.
 - If you get the argument type of an overloaded operator wrong, you may get a different overload rather than a compiler error. For example, `foo < bar` may do one thing, `while &foo < &bar` does something totally different.
 - Certain operator overloads are inherently hazardous. Overloading unary & can cause the same code to have different meanings depending on whether the overload declaration is visible. Overloads of `&&`, `||`, and `,` (comma) cannot match the evaluation-order semantics of the built-in operators.
 - Operators are often defined outside the class, so there's a risk of different files introducing different definitions of the same operator. If both definitions are linked into the same binary, this results in undefined behavior, which can manifest as subtle run-time bugs.
@@ -839,6 +887,7 @@ Use the specified order of declarations within a class: `public:` before `privat
 Your class definition should start with its `public:` section, followed by its `protected:` section and then its `private:` section. If any of these sections are empty, omit them.
 
 Within each section, the declarations generally should be in the following order:
+
 - Using-declarations, Typedefs and Enums
 - Constants (`static const` data members)
 - Constructors
@@ -846,7 +895,7 @@ Within each section, the declarations generally should be in the following order
 - Methods, including static methods
 - Data Members (except static const data members)
 
-If copying and assignment are disabled with a macro such as `DISALLOW_COPY_AND_ASSIGN`, it should be at the end of the `private:` section, and should be the last thing in the class. See [Copyable and Movable Types](#copyable-movable-types).
+If copying and assignment are disabled with a macro such as `DISALLOW_COPY_AND_ASSIGN`, it should be at the end of the `private:` section, and should be the last thing in the class. See [Copyable and Movable Types](#copyable-and-movable-types).
 
 Do not put large method definitions inline in the class definition. Usually, only trivial or performance-critical, and very short, methods may be defined inline. See [Inline Functions](#inline-functions) for more details.
 
@@ -997,7 +1046,7 @@ The trailing return type is in the function's scope. This doesn't make a differe
 
 **Pros:**
 
-Trailing return types are the only way to explicitly specify the return type of a [lambda expression](#lambda-expression). In some cases the compiler is able to deduce a lambda's return type, but not in all cases. Even when the compiler can deduce it automatically, sometimes specifying it explicitly would be clearer for readers.
+Trailing return types are the only way to explicitly specify the return type of a [lambda expression](#lambda-expressions). In some cases the compiler is able to deduce a lambda's return type, but not in all cases. Even when the compiler can deduce it automatically, sometimes specifying it explicitly would be clearer for readers.
 
 Sometimes it's easier and more readable to specify a return type after the function's parameter list has already appeared. This is particularly true when the return type depends on template parameters. For example:
 
@@ -1115,7 +1164,7 @@ Rvalue references are a relatively new feature (introduced as part of C++11), an
 
 **Decision:**
 
-Use rvalue references only to define move constructors and move assignment operators (as described in [Copyable and Movable Types](#copyable-movable-types)) and, in conjunction with [`std::forward`](https://google.github.io/styleguide/cppguide.html#Copyable_Movable_Types), to support perfect forwarding. You may use std::move to express moving a value from one object to another rather than copying it. 
+Use rvalue references only to define move constructors and move assignment operators (as described in [Copyable and Movable Types](#copyable-and-movable-types)) and, in conjunction with [`std::forward`](http://en.cppreference.com/w/cpp/utility/forward), to support perfect forwarding. You may use std::move to express moving a value from one object to another rather than copying it. 
 
 
 
@@ -1224,7 +1273,7 @@ RTTI has legitimate uses but is prone to abuse, so you must be careful when usin
 - Virtual methods are the preferred way of executing different code paths depending on a specific subclass type. This puts the work within the object itself.
 - If the work belongs outside the object and instead in some processing code, consider a double-dispatch solution, such as the Visitor design pattern. This allows a facility outside the object itself to determine the type of class using the built-in type system.
 
-When the logic of a program guarantees that a given instance of a base class is in fact an instance of a particular derived class, then a `dynamic_cast` may be used freely on the object. Usually one can use a static_cast as an alternative in such situations.
+When the logic of a program guarantees that a given instance of a base class is in fact an instance of a particular derived class, then a `dynamic_cast` may be used freely on the object. Usually one can use a `static_cast` as an alternative in such situations.
 
 Decision trees based on type are a strong indication that your code is on the wrong track.
 
@@ -1263,13 +1312,13 @@ The C++-style cast syntax is verbose and cumbersome.
 
 **Decision:**
 
-Do not use C-style casts. Instead, use these C++-style casts when explicit type conversion is necessary.
+- Do not use C-style casts. Instead, use these C++-style casts when explicit type conversion is necessary.
 - Convert arithmetic types using brace initialization. This is the safest approach because code will not compile if conversion can result in information loss. The syntax is also concise.
 - Use `static_cast` as the equivalent of a C-style cast that does value conversion, when you need to explicitly up-cast a pointer from a class to its superclass, or when you need to explicitly cast a pointer from a superclass to a subclass. In this last case, you must be sure your object is actually an instance of the subclass.
-- Use `const_cast` to remove the const qualifier (see [const](https://google.github.io/styleguide/cppguide.html#Use_of_const)).
-- Use reinterpret_cast to do unsafe conversions of pointer types to and from integer and other pointer types. Use this only if you know what you are doing and you understand the aliasing issues.
+- Use `const_cast` to remove the const qualifier (see [const](#use-of-const)).
+- Use `reinterpret_cast` to do unsafe conversions of pointer types to and from integer and other pointer types. Use this only if you know what you are doing and you understand the aliasing issues.
 
-See the [RTTI section](#run-time-type-information-rtti) for guidance on the use of dynamic_cast.
+See the [RTTI section](#run-time-type-information-rtti) for guidance on the use of `dynamic_cast`.
 
 
 
@@ -1284,7 +1333,7 @@ Streams are the standard I/O abstraction in C++, as exemplified by the standard 
 
 **Pros:**
 
-The `<<` and `>>` stream operators provide an API for formatted I/O that is easily learned, portable, reusable, and extensible. `printf`, by contrast, doesn't even support string, to say nothing of user-defined types, and is very difficult to use portably. printf also obliges you to choose among the numerous slightly different versions of that function, and navigate the dozens of conversion specifiers.
+The `<<` and `>>` stream operators provide an API for formatted I/O that is easily learned, portable, reusable, and extensible. `printf`, by contrast, doesn't even support string, to say nothing of user-defined types, and is very difficult to use portably. `printf` also obliges you to choose among the numerous slightly different versions of that function, and navigate the dozens of conversion specifiers.
 
 Streams provide first-class support for console I/O via `std::cin`, `std::cout`, `std::cerr`, and `std::clog`. The C APIs do as well, but are hampered by the need to manually buffer the input.
 
@@ -1294,7 +1343,7 @@ Streams provide first-class support for console I/O via `std::cin`, `std::cout`,
 - It is difficult to precisely control stream output, due to the above issues, the way code and data are mixed in streaming code, and the use of operator overloading (which may select a different overload than you expect).
 - The practice of building up output through chains of `<<` operators interferes with internationalization, because it bakes word order into the code, and streams' support for localization is [flawed](http://www.boost.org/doc/libs/1_48_0/libs/locale/doc/html/rationale.html#rationale_why).
 - The streams API is subtle and complex, so programmers must develop experience with it in order to use it effectively. However, streams were historically banned in Google code (except for logging and diagnostics), so Google engineers tend not to have that experience. Consequently, streams-based code is likely to be less readable and maintainable by Googlers than code based on more familiar abstractions.
-- Resolving the many overloads of << is extremely costly for the compiler. When used pervasively in a large code base, it can consume as much as 20% of the parsing and semantic analysis time.
+- Resolving the many overloads of `<<` is extremely costly for the compiler. When used pervasively in a large code base, it can consume as much as 20% of the parsing and semantic analysis time.
 
 **Decision:**
 
@@ -1311,7 +1360,7 @@ Overload `<<` as a streaming operator for your type only if your type represents
 Preincrement and Predecrement
 -----------------------------
 
-Use prefix form (++i) of the increment and decrement operators with iterators and other template objects.
+Use prefix form (`++i`) of the increment and decrement operators with iterators and other template objects.
 
 **Definition:**
 
@@ -1334,11 +1383,11 @@ For simple scalar (non-object) values there is no reason to prefer one form and 
 Use of const
 ------------
 
-Use const whenever it makes sense. With C++11, constexpr is a better choice for some uses of const.
+Use `const` whenever it makes sense. With C++11, `constexpr` is a better choice for some uses of const.
 
 **Definition:**
 
-Declared variables and parameters can be preceded by the keyword const to indicate the variables are not changed (e.g., `const int foo`). Class functions can have the const qualifier to indicate the function does not change the state of the class member variables (e.g., `class Foo { int Bar(char c) const; };`).
+Declared variables and parameters can be preceded by the keyword `const` to indicate the variables are not changed (e.g., `const int foo`). Class functions can have the `const` qualifier to indicate the function does not change the state of the class member variables (e.g., `class Foo { int Bar(char c) const; };`).
 
 **Pros:**
 
@@ -1350,13 +1399,13 @@ Easier for people to understand how variables are being used. Allows the compile
 
 **Decision:**
 
-const variables, data members, methods and arguments add a level of compile-time type checking; it is better to detect errors as soon as possible. Therefore we strongly recommend that you use const whenever it makes sense to do so:
+`const` variables, data members, methods and arguments add a level of compile-time type checking; it is better to detect errors as soon as possible. Therefore we strongly recommend that you use `const` whenever it makes sense to do so:
 
 - If a function guarantees that it will not modify an argument passed by reference or by pointer, the corresponding function parameter should be a reference-to-const (`const T&`) or pointer-to-const (`const T*`), respectively.
-- Declare methods to be const whenever possible. Accessors should almost always be const. Other methods should be const if they do not modify any data members, do not call any non-const methods, and do not return a non-const pointer or non-const reference to a data member.
-- Consider making data members const whenever they do not need to be modified after construction.
+- Declare methods to be `const` whenever possible. Accessors should almost always be `const`. Other methods should be `const` if they do not modify any data members, do not call any non-const methods, and do not return a non-const pointer or non-const reference to a data member.
+- Consider making data members `const` whenever they do not need to be modified after construction.
 
-The mutable keyword is allowed but is unsafe when used with threads, so thread safety should be carefully considered first.
+The `mutable` keyword is allowed but is unsafe when used with threads, so thread safety should be carefully considered first.
 
 #### Where to put the const ####
 
@@ -1377,15 +1426,15 @@ Some variables can be declared `constexpr` to indicate the variables are true co
 
 **Pros:**
 
-Use of constexpr enables definition of constants with floating-point expressions rather than just literals; definition of constants of user-defined types; and definition of constants with function calls.
+Use of `constexpr` enables definition of constants with floating-point expressions rather than just literals; definition of constants of user-defined types; and definition of constants with function calls.
 
 **Cons:**
 
-Prematurely marking something as constexpr may cause migration problems if later on it has to be downgraded. Current restrictions on what is allowed in constexpr functions and constructors may invite obscure workarounds in these definitions.
+Prematurely marking something as `constexpr` may cause migration problems if later on it has to be downgraded. Current restrictions on what is allowed in `constexpr` functions and constructors may invite obscure workarounds in these definitions.
 
 **Decision:**
 
-constexpr definitions enable a more robust specification of the `constant` parts of an interface. Use constexpr to specify true constants and the functions that support their definitions. Avoid complexifying function definitions to enable their use with `constexpr`. Do not use constexpr to force inlining.
+`constexpr` definitions enable a more robust specification of the `constant` parts of an interface. Use `constexpr` to specify true constants and the functions that support their definitions. Avoid complexifying function definitions to enable their use with `constexpr`. Do not use `constexpr` to force inlining.
 
 
 
@@ -1441,7 +1490,8 @@ Code should be 64-bit and 32-bit friendly. Bear in mind problems of printing, co
 
 - `printf()` specifiers for some types are not cleanly portable between 32-bit and 64-bit systems. C99 defines some portable format specifiers. Unfortunately, MSVC 7.1 does not understand some of these specifiers and the standard is missing a few, so we have to define our own ugly versions in some cases (in the style of the standard include file `inttypes.h`):
 
-FIXME(denisacostaq@gmail.com): ident to left
+FIXME(denisacostaq@gmail.com): ident to right
+
 ~~~cpp
 // printf macros for size_t, in the style of inttypes.h
 #ifdef _LP64
@@ -1477,7 +1527,8 @@ Note that the `PRI*` macros expand to independent strings which are concatenated
 
 - Use the `LL` or `ULL` suffixes as needed to create 64-bit constants. For example:
 
-FIXME(denisacostaq@gmail.com): ident to left
+FIXME(denisacostaq@gmail.com): ident to right
+
 ~~~cpp
 int64_t my_value = 0x123456789LL;
 uint64_t my_mask = 3ULL << 48;
@@ -1513,7 +1564,7 @@ Use `0` for integers, `0.0` for reals, `nullptr` (or `NULL`) for pointers, and `
 
 Use `0` for integers and `0.0` for reals. This is not controversial.
 
-For pointers (address values), there is a choice between `0`, `NULL`, and `nullptr`. For projects that allow C++11 features, use nullptr. For C++03 projects, we prefer NULL because it looks like a pointer. In fact, some C++ compilers provide special definitions of `NULL` which enable them to give useful warnings, particularly in situations where `sizeof(NULL)` is not equal to `sizeof(0)`.
+For pointers (address values), there is a choice between `0`, `NULL`, and `nullptr`. For projects that allow C++11 features, use `nullptr`. For C++03 projects, we prefer `NULL` because it looks like a pointer. In fact, some C++ compilers provide special definitions of `NULL` which enable them to give useful warnings, particularly in situations where `sizeof(NULL)` is not equal to `sizeof(0)`.
 
 Use `'\0'` for chars. This is the correct type and also makes code more readable.
 
@@ -1547,11 +1598,11 @@ if (raw_size < sizeof(int)) {
 auto
 ----
 
-Use auto to avoid type names that are just clutter. Continue to use manifest type declarations when it helps readability, and never use auto for anything but local variables.
+Use `auto` to avoid type names that are just clutter. Continue to use manifest type declarations when it helps readability, and never use `auto` for anything but local variables.
 
 **Definition:**
 
-In C++11, a variable whose type is given as auto will be given a type that matches that of the expression used to initialize it. You can use auto either to initialize a variable by copying, or to bind a reference.
+In C++11, a variable whose type is given as `auto` will be given a type that matches that of the expression used to initialize it. You can use `auto` either to initialize a variable by copying, or to bind a reference.
 
 ~~~cpp
 vector<string> v;
@@ -1560,7 +1611,7 @@ auto s1 = v[0];  // Makes a copy of v[0].
 const auto& s2 = v[0];  // s2 is a reference to v[0].
 ~~~
 
-The auto keyword is also used in an unrelated C++11 feature: it's part of the syntax for a new kind of function declaration with a [trailing return type](#trailing-return).
+The `auto` keyword is also used in an unrelated C++11 feature: it's part of the syntax for a new kind of function declaration with a [trailing return type](#trailing-return-type-syntax).
 
 **Pros:**
 
@@ -1570,7 +1621,7 @@ C++ type names can sometimes be long and cumbersome, especially when they involv
 sparse_hash_map<string, int>::iterator iter = m.find(val);
 ~~~
 
-the return type is hard to read, and obscures the primary purpose of the statement. Changing it to:
+the `return` type is hard to read, and obscures the primary purpose of the statement. Changing it to:
 
 ~~~cpp
 auto iter = m.find(val);
@@ -1578,25 +1629,25 @@ auto iter = m.find(val);
 
 makes it more readable.
 
-Without auto we are sometimes forced to write a type name twice in the same expression, adding no value for the reader, as in:
+Without `auto` we are sometimes forced to write a type name twice in the same expression, adding no value for the reader, as in:
 
 ~~~cpp
 diagnostics::ErrorStatus* status = new diagnostics::ErrorStatus("xyz");
 ~~~
 
-Using auto makes it easier to use intermediate variables when appropriate, by reducing the burden of writing their types explicitly.
+Using `auto` makes it easier to use intermediate variables when appropriate, by reducing the burden of writing their types explicitly.
 
 **Cons:**
 
 Sometimes code is clearer when types are manifest, especially when a variable's initialization depends on things that were declared far away. In an expression like:
 
-~~cpp
+~~~cpp
 auto i = x.Lookup(key);
 ~~~
 
 it may not be obvious what i's type is, if x was declared hundreds of lines earlier.
 
-Programmers have to understand the difference between auto and const auto& or they'll get copies when they didn't mean to.
+Programmers have to understand the difference between `auto` and `const auto&` or they'll get copies when they didn't mean to.
 
 The interaction between auto and C++11 brace-initialization can be confusing. The exact rules have been in flux, and compilers don't all implement the final rules yet. The declarations:
 
@@ -1605,13 +1656,13 @@ auto x{3};
 auto y = {3};
 ~~~
 
-mean different things — x is an int, while y is a `std::initializer_list<int>`. The same applies to other normally-invisible proxy types.
+mean different things — `x` is an `int`, while y is a `std::initializer_list<int>`. The same applies to other normally-invisible proxy types.
 
-If an auto variable is used as part of an interface, e.g. as a constant in a header, then a programmer might change its type while only intending to change its value, leading to a more radical API change than intended.
+If an `auto` variable is used as part of an interface, e.g. as a constant in a header, then a programmer might change its type while only intending to change its value, leading to a more radical API change than intended.
 
 **Decision:**
 
-`auto` is permitted, for local variables only. Do not use auto for file-scope or namespace-scope variables, or for class members. Never initialize an auto-typed variable with a braced initializer list. 
+`auto` is permitted, for local variables only. Do not use `auto` for file-scope or namespace-scope variables, or for class members. Never initialize an auto-typed variable with a braced initializer list. 
 
 
 
@@ -1791,6 +1842,7 @@ Avoid complicated template programming.
 Template metaprogramming refers to a family of techniques that exploit the fact that the C++ template instantiation mechanism is Turing complete and can be used to perform arbitrary compile-time computation in the type domain.
 
 **Pros:**
+
 Template metaprogramming allows extremely flexible interfaces that are type safe and high performance. Facilities like Google Test, `std::tuple`, `std::function`, and `Boost.Spirit` would be impossible without it.
 
 **Cons:**
@@ -1872,13 +1924,13 @@ Do not define specializations of `std::hash`.
 
 `std::hash` is hard to specialize. It requires a lot of boilerplate code, and more importantly, it combines responsibility for identifying the hash inputs with responsibility for executing the hashing algorithm itself. The type author has to be responsible for the former, but the latter requires expertise that a type author usually doesn't have, and shouldn't need. The stakes here are high because low-quality hash functions can be security vulnerabilities, due to the emergence of [hash flooding attacks](http://emboss.github.io/blog/2012/12/14/breaking-murmur-hash-flooding-dos-reloaded/).
 
-Even for experts, std::hash specializations are inordinately difficult to implement correctly for compound types, because the implementation cannot recursively call `std::hash` on data members. High-quality hash algorithms maintain large amounts of internal state, and reducing that state to the size_t bytes that std::hash returns is usually the slowest part of the computation, so it should not be done more than once.
+Even for experts, `std::hash` specializations are inordinately difficult to implement correctly for compound types, because the implementation cannot recursively call `std::hash` on data members. High-quality hash algorithms maintain large amounts of internal state, and reducing that state to the `size_t` bytes that `std::hash` returns is usually the slowest part of the computation, so it should not be done more than once.
 
-Due to exactly that issue, std::hash does not work with `std::pair` or `std::tuple`, and the language does not allow us to extend it to support them.
+Due to exactly that issue, `std::hash` does not work with `std::pair` or `std::tuple`, and the language does not allow us to extend it to support them.
 
 **Decision:**
 
-You can use std::hash with the types that it supports "out of the box", but do not specialize it to support additional types. If you need a hash table with a key type that `std::hash` does not support, consider using legacy hash containers (e.g. `hash_map`) for now; they use a different default hasher, which is unaffected by this prohibition.
+You can use `std::hash` with the types that it supports "out of the box", but do not specialize it to support additional types. If you need a hash table with a key type that `std::hash` does not support, consider using legacy hash containers (e.g. `hash_map`) for now; they use a different default hasher, which is unaffected by this prohibition.
 
 If you want to use the standard hash containers anyway, you will need to specify a custom hasher for the key type, e.g.
 
@@ -1888,7 +1940,7 @@ std::unordered_map<MyKeyType, Value, MyKeyTypeHasher> my_map;
 
 Consult with the type's owners to see if there is an existing hasher that you can use; otherwise work with them to provide one, or roll your own.
 
-We are planning to provide a hash function that can work with any type, using a new customization mechanism that doesn't have the drawbacks of std::hash.
+We are planning to provide a hash function that can work with any type, using a new customization mechanism that doesn't have the drawbacks of `std::hash`.
 
 
 
@@ -1936,7 +1988,7 @@ using Bar = Foo;
 using other_namespace::Foo;
 ~~~
 
-Like other declarations, aliases declared in a header file are part of that header's public API unless they're in a function definition, in the private portion of a class, or in an explicitly-marked internal namespace. Aliases in such areas or in .cc files are implementation details (because client code can't refer to them), and are not restricted by this rule.
+Like other declarations, aliases declared in a header file are part of that header's public API unless they're in a function definition, in the private portion of a class, or in an explicitly-marked internal namespace. Aliases in such areas or in `.cc` files are implementation details (because client code can't refer to them), and are not restricted by this rule.
 
 **Pros:**
 
@@ -2130,13 +2182,13 @@ There are no special requirements for global variables, which should be rare in 
 Constant Names
 --------------
 
-Variables declared constexpr or const, and whose value is fixed for the duration of the program, are named with a leading "k" followed by mixed case. For example:
+Variables declared `constexpr` or `const`, and whose value is fixed for the duration of the program, are named with a leading "k" followed by mixed case. For example:
 
 ~~~cpp
 const int kDaysInAWeek = 7;
 ~~~
 
-All such variables with static storage duration (i.e. statics and globals, see [Storage Duration](http://en.cppreference.com/w/cpp/language/storage_duration#Storage_duration) for details) should be named this way. This convention is optional for variables of other storage classes, e.g. automatic variables, otherwise the usual variable naming rules apply.
+All such variables with `static` storage duration (i.e. statics and globals, see [Storage Duration](http://en.cppreference.com/w/cpp/language/storage_duration#Storage_duration) for details) should be named this way. This convention is optional for variables of other storage classes, e.g. automatic variables, otherwise the usual variable naming rules apply.
 
 
 
@@ -2177,7 +2229,7 @@ Namespace names are all lower-case. Top-level namespace names are based on the p
 
 The name of a top-level namespace should usually be the name of the project or team whose code is contained in that namespace. The code in that namespace should usually be in a directory whose basename matches the namespace name (or subdirectories thereof).
 
-Keep in mind that the [rule against abbreviated names](general-naming-rules) applies to namespaces just as much as variable names. Code inside the namespace seldom needs to mention the namespace name, so there's usually no particular need for abbreviation anyway.
+Keep in mind that the [rule against abbreviated names](#general-naming-rules) applies to namespaces just as much as variable names. Code inside the namespace seldom needs to mention the namespace name, so there's usually no particular need for abbreviation anyway.
 
 Naming conventions for nested namespaces are at the discretion of the team owning the enclosing namespace. If a nested namespace is used to group related functions in a single header file, consider basing its name on the header name, e.g. `namespace foo::bar` for functions defined in the header file `bar.h`. If the nested namespace is being used to distinguish implementation details from user-facing declarations, one common choice is internal.
 
@@ -2702,6 +2754,7 @@ void Circle::Rotate(double) {}<br/>
 </div>
 
 
+<a name="formatting-lambda-expressions"></a>
 
 Lambda Expressions
 ------------------
@@ -2989,6 +3042,7 @@ x = r->y;
 ~~~
 
 Note that:
+
 - There are no spaces around the period or arrow when accessing a member.
 - Pointer operators have no space after the `*` or `&`.
 
@@ -3028,7 +3082,7 @@ if (this_one_thing > this_other_thing &&
 }
 ~~~
 
-Note that when the code wraps in this example, both of the `&&` logical AND operators are at the end of the line. This is more common in Google code, though wrapping all operators at the beginning of the line is also allowed. Feel free to insert extra parentheses judiciously because they can be very helpful in increasing readability when used appropriately. Also note that you should always use the punctuation operators, such as `&&` and `~`, rather than the word operators, such as and and compl.
+Note that when the code wraps in this example, both of the `&&` logical AND operators are at the end of the line. This is more common in Google code, though wrapping all operators at the beginning of the line is also allowed. Feel free to insert extra parentheses judiciously because they can be very helpful in increasing readability when used appropriately. Also note that you should always use the punctuation operators, such as `&&` and `~`, rather than the word operators, such as `and` and `compl`.
 
 
 
