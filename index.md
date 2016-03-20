@@ -5,9 +5,9 @@
 
 <style>
    .sourceCode .c {
-     background-color: #FF0000; *this is where you put the 6 digit color you want*
+     background-color: #FFE6D8; *this is where you put the 6 digit color you want*
     }
- </style>
+</style>
 
 Background
 ==========
@@ -362,9 +362,11 @@ namespace a {
 
 - You may not use a using-directive to make all names from a namespace available.
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px; margin-left: 3em;">
-<span style="padding-left: 0.5em;">// Forbidden -- This pollutes the namespace.</span><br/>
-<span style="padding-left: 0.5em;">using namespace foo;</span>
+<div style="margin-left: 3em;">
+~~~c
+// Forbidden -- This pollutes the namespace.
+using namespace foo;
+~~~
 </div>
 
 - Do not use Namespace aliases at namespace scope in header files except in explicitly marked internal-only namespaces, because anything imported into a namespace in a header file becomes part of the public API exported by that file.
@@ -425,15 +427,15 @@ void Function2();
 
 instead of
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-namespace myproject {<br/>
-class FooBar {<br/>
-<span style="padding-left: 0.5em;">public:</span><br/>
-<span style="padding-left: 1em;">static void Function1();</span><br/>
-<span style="padding-left: 1em;">static void Function2();</span><br/>
-};<br/>
-}<br/>
-</div>
+~~~c
+namespace myproject {
+class FooBar {
+ public:
+  static void Function1();
+  static void Function2();
+};
+}
+~~~
 
 If you must define a nonmember function and it is only needed in its `.cc` file, use an unnamed [namespace](#namespaces) or static linkage (eg static `int Foo() {...}`) to limit its scope.
 
@@ -446,21 +448,20 @@ Place a function's variables in the narrowest scope possible, and initialize var
 
 C++ allows you to declare variables anywhere in a function. We encourage you to declare them in as local a scope as possible, and as close to the first use as possible. This makes it easier for the reader to find the declaration and see what type the variable is and what it was initialized to. In particular, initialization should be used instead of declaration and assignment, e.g.:
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-int i;<br/>
-i = f();      // Bad -- initialization separate from declaration.<br/>
-</div>
+~~~c
+int i;
+i = f();      // Bad -- initialization separate from declaration.
+~~~
 
 ~~~cpp
 int j = g();  // Good -- declaration has initialization.
 ~~~
 
-FIXME(denisacostaq@gmail.com): no sale el vector<int> del templetizado.
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-vector<int> v;<br/>
-v.push_back(1);  // Prefer initializing using brace initialization.<br/>
-v.push_back(2);<br/>
-</div>
+~~~c
+vector<int> v;
+v.push_back(1);  // Prefer initializing using brace initialization.
+v.push_back(2);
+~~~
 
 ~~~cpp
 vector<int> v = {1, 2};  // Good -- v starts initialized.
@@ -474,13 +475,13 @@ while (const char* p = strchr(str, '/')) str = p + 1;
 
 There is one caveat: if the variable is an object, its constructor is invoked every time it enters scope and is created, and its destructor is invoked every time it goes out of scope.
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-// Inefficient implementation:<br/>
-for (int i = 0; i < 1000000; ++i) {<br/>
-  <span style="padding-left: 1em;">Foo f;  // My ctor and dtor get called 1000000 times each.</span><br/>
-  <span style="padding-left: 1em;">f.DoSomething(i);</span><br/>
-}<br/>
-</div>
+~~~c
+// Inefficient implementation:
+for (int i = 0; i < 1000000; ++i) {
+  Foo f;  // My ctor and dtor get called 1000000 times each.
+  f.DoSomething(i);
+}
+~~~
 
 It may be more efficient to declare such a variable used in a loop outside that loop:
 
@@ -572,9 +573,9 @@ class Foo {
 void Func(Foo f);
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-Func({42, 3.14});  // Error<br/>
-</div>
+~~~c
+Func({42, 3.14});  // Error
+~~~
 
 This kind of code isn't technically an implicit conversion, but the language treats it as one as far as explicit is concerned. 
 
@@ -649,18 +650,16 @@ class Foo {  // Copyable and movable type.
 };
 ~~~
 
-// FIXME(denisacostaq@gmail.com): darle un margin a todo el codigo, en todos los rojos.
+~~~c
+class Foo {
+ public:
+  Foo(Foo&& other) : field_(other.field) {}
+  // Bad, defines only move constructor, but not operator=.
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-class Foo {<br/>
-<span style="padding-left: 0.5em;">public:</span><br/>
-<span style="padding-left: 1em;">Foo(Foo&& other) : field_(other.field){}</span><br/>
-<span style="padding-left: 1em;">// Bad, defines only move constructor, but not operator=.</span><br/>
-<br/>
-<span style="padding-left: 0.5em;">private:</span><br/>
-<span style="padding-left: 1em;">Field field_;</span><br/>
+ private:
+  Field field_;
 };
-</div>
+~~~
 
 Due to the risk of slicing, avoid providing an assignment operator or public copy/move constructor for a class that's intended to be derived from (and avoid deriving from a class with such members). If your base class needs to be copyable, provide a public virtual `Clone()` method, and a protected copy constructor that derived classes can use to implement it.
 
@@ -1277,15 +1276,14 @@ When the logic of a program guarantees that a given instance of a base class is 
 
 Decision trees based on type are a strong indication that your code is on the wrong track.
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-if (typeid(*data) == typeid(D1)) {<br/>
-<span style="padding-left: 1em;">...</span><br/>
-} else if (typeid(*data) == typeid(D2)) {<br/>
-<span style="padding-left: 1em;">...</span><br/>
-} else if (typeid(*data) == typeid(D3)) {<br/>
-<span style="padding-left: 1em;">...</span><br/>
-};
-</div>
+~~~c
+if (typeid(*data) == typeid(D1)) {
+  ...
+} else if (typeid(*data) == typeid(D2)) {
+  ...
+} else if (typeid(*data) == typeid(D3)) {
+...
+~~~
 
 Code such as this usually breaks when additional subclasses are added to the class hierarchy. Moreover, when properties of a subclass change, it is difficult to find and modify all the affected code segments.
 
@@ -1582,9 +1580,9 @@ Struct data;
 memset(&data, 0, sizeof(data));
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-memset(&data, 0, sizeof(Struct));<br/>
-</div>
+~~~c
+memset(&data, 0, sizeof(Struct));
+~~~
 
 ~~~cpp
 if (raw_size < sizeof(int)) {
@@ -1741,9 +1739,9 @@ MyOtherType m{"b"};
 
 Never assign a *braced-init-list* to an auto local variable. In the single element case, what this means can be confusing.
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-auto d = {1.23};        // d is a std::initializer_list<double><br/>
-</div>
+~~~c
+auto d = {1.23};        // d is a std::initializer_list<double>
+~~~
 
 ~~~cpp
 auto d = double{1.23};  // Good -- d is a double, not a std::initializer_list.
@@ -1798,18 +1796,20 @@ Lambdas were introduced in C++11 along with a set of utilities for working with 
 - Use lambda expressions where appropriate, with formatting as described [below](#formatting-lambda-expressions).
 - Use default captures judiciously, when it aids readability. In particular, prefer to write lambda captures explicitly when capturing this or if the lambda will escape the current scope. For example, instead of: 
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px; margin-left: 3em;">
-{<br/>
-<span style="padding-left: 1em;">Foo foo;</span><br/>
-<span style="padding-left: 1em;">...</span><br/>
-<span style="padding-left: 1em;">executor->Schedule([&] { Frobnicate(foo); })</span><br/>
-<span style="padding-left: 1em;">...</span><br/>
-}<br/>
-// BAD! The fact that the lambda makes use of a reference to `foo` and<br/>
-// possibly `this` (if `Frobnicate` is a member function) may not be<br/>
-// apparent on a cursory inspection. If the lambda is invoked after<br/>
-// the function returns, that would be bad, because both `foo`<br/>
-// and the enclosing object could have been destroyed.<br/>
+<div style="margin-left: 3em;">
+~~~c
+{
+  Foo foo;
+  ...
+  executor->Schedule([&] { Frobnicate(foo); })
+  ...
+}
+// BAD! The fact that the lambda makes use of a reference to `foo` and
+// possibly `this` (if `Frobnicate` is a member function) may not be
+// apparent on a cursory inspection. If the lambda is invoked after
+// the function returns, that would be bad, because both `foo`
+// and the enclosing object could have been destroyed.
+~~~
 </div>
 
 <span style="padding-left: 3em;">prefer to write:</span>
@@ -2027,15 +2027,15 @@ using TimeSeries = std::unordered_set<DataPoint, std::hash<DataPoint>, DataPoint
 
 These aliases don't document intended use, and half of them aren't meant for client use:
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-namespace a {<br/>
-// Bad: none of these say how they should be used.<br/>
-using DataPoint = foo::bar::Bar*;<br/>
-using std::unordered_set;  // Bad: just for local convenience<br/>
-using std::hash;           // Bad: just for local convenience<br/>
-typedef unordered_set<DataPoint, hash<DataPoint>, DataPointComparator> TimeSeries;<br/>
-}  // namespace a<br/>
-</div>
+~~~c
+namespace a {
+// Bad: none of these say how they should be used.
+using DataPoint = foo::bar::Bar*;
+using std::unordered_set;  // Bad: just for local convenience
+using std::hash;           // Bad: just for local convenience
+typedef unordered_set<DataPoint, hash<DataPoint>, DataPointComparator> TimeSeries;
+}  // namespace a
+~~~
 
 However, local convenience aliases are fine in function definitions, private sections of classes, explicitly marked internal namespaces, and in `.cc` files:
 
@@ -2069,14 +2069,14 @@ int num_errors;            // "num" is a widespread convention.
 int num_dns_connections;   // Most people know what "DNS" stands for.
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-int n;                     // Meaningless.<br/>
-int nerr;                  // Ambiguous abbreviation.<br/>
-int n_comp_conns;          // Ambiguous abbreviation.<br/>
-int wgc_connections;       // Only your group knows what this stands for.<br/>
-int pc_reader;             // Lots of things can be abbreviated "pc".<br/>
-int cstmr_id;              // Deletes internal letters.<br/>
-</div>
+~~~c
+int n;                     // Meaningless.
+int nerr;                  // Ambiguous abbreviation.
+int n_comp_conns;          // Ambiguous abbreviation.
+int wgc_connections;       // Only your group knows what this stands for.
+int pc_reader;             // Lots of things can be abbreviated "pc".
+int cstmr_id;              // Deletes internal letters.
+~~~
 
 
 
@@ -2141,9 +2141,9 @@ string table_name;  // OK - uses underscore.
 string tablename;   // OK - all lowercase.
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-string tableName;   // Bad - mixed case.<br/>
-</div>
+~~~c
+string tableName; // Bad - mixed case.
+~~~
 
 #### Class Data Members ####
 
@@ -2502,10 +2502,10 @@ When the meaning of a function argument is nonobvious, consider one of the follo
 
 Consider the following example: 
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-// What are these arguments?<br/>
-const DecimalNumber product = CalculateProduct(values, 7, false, nullptr);<br/>
-</div>
+~~~c
+// What are these arguments?
+const DecimalNumber product = CalculateProduct(values, 7, false, nullptr);
+~~~
 
 versus:
 
@@ -2522,13 +2522,13 @@ const DecimalNumber product =
 Do not state the obvious. In particular, don't literally describe what code does, unless the behavior is nonobvious to a reader who understands C++ well. Instead, provide higher level comments that describe why the code does what it does, or make the code self describing.
 Compare this: 
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px; margin-left: 3em;">
-// Find the element in the vector.  <-- Bad: obvious!<br/>
-auto iter = std::find(v.begin(), v.end(), element);<br/>
-if (iter != v.end()) {<br/>
-<span style="padding-left: 1em;">Process(element);</span><br/>
-}<br/>
-</div>
+~~~c
+// Find the element in the vector.  <-- Bad: obvious!
+auto iter = std::find(v.begin(), v.end(), element);
+if (iter != v.end()) {
+  Process(element);
+}
+~~~
 
 To this: 
 
@@ -2746,12 +2746,12 @@ class Circle : public Shape {
 void Circle::Rotate(double /*radians*/) {}
 ~~~
 
+~~~c
+// Bad - if someone wants to implement later, it's not clear what the
+// variable means.
+void Circle::Rotate(double) {}
+~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px; margin-left: 3em;">
-// Bad - if someone wants to implement later, it's not clear what the<br/>
-// variable means.<br/>
-void Circle::Rotate(double) {}<br/>
-</div>
 
 
 <a name="formatting-lambda-expressions"></a>
@@ -2910,11 +2910,11 @@ if ( condition ) {  // spaces inside parentheses - rare
 
 Note that in all cases you must have a space between the if and the open parenthesis. You must also have a space between the close parenthesis and the curly brace, if you're using one.
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-if(condition) {   // Bad - space missing after IF.<br/>
-if (condition){   // Bad - space missing before {.<br/>
-if(condition){    // Doubly bad.<br/>
-</div>
+~~~c
+if(condition) {   // Bad - space missing after IF.
+if (condition){   // Bad - space missing before {.
+if(condition){    // Doubly bad.
+~~~
 
 ~~~cpp
 if (condition) {  // Good - proper space after IF and before {.
@@ -2929,11 +2929,11 @@ if (x == kBar) return new Bar();
 
 This is not allowed when the if statement has an else:
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-// Not allowed - IF statement on one line when there is an ELSE clause<br/>
-if (x) DoThis();<br/>
-else DoThat();<br/>
-</div>
+~~~c
+// Not allowed - IF statement on one line when there is an ELSE clause
+if (x) DoThis();
+else DoThat();
+~~~
 
 In general, curly braces are not required for single-line statements, but they are allowed if you like them; conditional or loop statements with complex conditions or statements may be more readable with curly braces. Some projects require that an if must always always have an accompanying brace.
 
@@ -2948,20 +2948,20 @@ if (condition) {
 
 However, if one part of an if-else statement uses curly braces, the other part must too:
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-// Not allowed - curly on IF but not ELSE<br/>
-if (condition) {<br/>
-<span style="padding-left: 1em;">foo;</span><br/>
-} else<br/>
-<span style="padding-left: 1em;">bar;</span><br/>
-<br/>
-// Not allowed - curly on ELSE but not IF<br/>
-if (condition)<br/>
-<span style="padding-left: 1em;">foo;</span><br/>
-else {<br/>
-<span style="padding-left: 1em;">bar;</span><br/>
-}<br/>
-</div>
+~~~c
+// Not allowed - curly on IF but not ELSE
+if (condition) {
+  foo;
+} else
+  bar;
+
+// Not allowed - curly on ELSE but not IF
+if (condition)
+  foo;
+else {
+  bar;
+}
+~~~
 
 ~~~cpp
 // Curly braces around both IF and ELSE required because
@@ -3021,9 +3021,9 @@ for (int i = 0; i < kSomeNumber; ++i) {}  // Good - empty body.
 while (condition) continue;  // Good - continue indicates no logic.
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-while (condition);  // Bad - looks like part of do/while loop.<br/>
-</div>
+~~~c
+while (condition);  // Bad - looks like part of do/while loop.
+~~~
 
 
 
@@ -3058,10 +3058,10 @@ char* c;    // but remember to do "char* c, *d, *e, ...;"!
 const string& str;
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-char * c;  // Bad - spaces on both sides of *<br/>
-const string & str;  // Bad - spaces on both sides of &<br/>
-</div>
+~~~c
+char * c;  // Bad - spaces on both sides of *
+const string & str;  // Bad - spaces on both sides of &
+~~~
 
 You should do this consistently within a single file, so, when modifying an existing file, use the style in that file.
 
@@ -3100,10 +3100,10 @@ return (some_long_condition &&
         another_condition);
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-return (value);                // You wouldn't write var = (value);<br/>
-return(result);                // return is not a function!<br/>
-</div>
+~~~c
+return (value);                // You wouldn't write var = (value);
+return(result);                // return is not a function!
+~~~
 
 
 
@@ -3159,15 +3159,15 @@ Even when preprocessor directives are within the body of indented code, the dire
   }
 ~~~
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-// Bad - indented directives<br/>
-<span style="padding-left: 1em;">if (lopsided_score) {</span><br/>
-<span style="padding-left: 2em;">#if DISASTER_PENDING  // Wrong!  The "#if" should be at beginning of line</span><br/>
-<span style="padding-left: 2em;">DropEverything();</span><br/>
-<span style="padding-left: 2em;">#endif                // Wrong!  Do not indent "#endif"</span><br/>
-<span style="padding-left: 2em;">BackToNormal();</span><br/>
-<span style="padding-left: 1em;">}</span><br/>
-</div>
+~~~c
+// Bad - indented directives
+  if (lopsided_score) {
+    #if DISASTER_PENDING  // Wrong!  The "#if" should be at beginning of line
+    DropEverything();
+    #endif                // Wrong!  Do not indent "#endif"
+    BackToNormal();
+  }
+~~~
 
 
 
@@ -3266,14 +3266,16 @@ void foo() {  // Correct.  No extra indentation within namespace.
 
 Do not indent within a namespace:
 
-<div style="background-color:#ffe6d8; vertical-align:middle; padding: 1px;">
-namespace {<br/>
-<span style="padding-left: 1em;">// Wrong.  Indented when it should not be.</span><br/>
-<span style="padding-left: 1em;">void foo() {</span><br/>
-<span style="padding-left: 2em;">...</span><br/>
-<span style="padding-left: 1em;">}</span><br/>
-}  // namespaces<br/>
-</div>
+~~~c
+namespace {
+
+  // Wrong.  Indented when it should not be.
+  void foo() {
+    ...
+  }
+
+}  // namespace
+~~~
 
 When declaring nested namespaces, put each namespace on its own line.
 
