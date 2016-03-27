@@ -1111,14 +1111,14 @@ Prefer to have single, fixed owners for dynamically allocated objects. Prefer to
 
 **Decision:**
 
-If dynamic allocation is necessary, prefer to keep ownership with the code that allocated it. If other code needs access to the object, consider passing it a copy, or passing a pointer or reference without transferring ownership. Prefer to use `std::unique_ptr` to make ownership transfer explicit. For example:
+If dynamic allocation is necessary, prefer to keep ownership with the code that allocated it(as the [RAII](http://en.cppreference.com/w/cpp/language/raii) principle say, with smart pointers). If other code needs access to the object, consider passing it a copy, or passing a pointer or reference without transferring ownership, in some cases transferring ownership is ok( eg: the factory pattern can(and should in most cases) return an autorelease(`std::unique_ptr`) object),. Use `std::unique_ptr` to make ownership transfer explicit too. For example:
 
 ~~~cpp
 std::unique_ptr<Foo> FooFactory();
 void FooConsumer(std::unique_ptr<Foo> ptr);
 ~~~
 
-Do not design your code to use shared ownership without a very good reason. One such reason is to avoid expensive copy operations, but you should only do this if the performance benefits are significant, and the underlying object is immutable (i.e. `std::shared_ptr<const Foo>`). If you do use shared ownership, prefer to use `std::shared_ptr`.
+Do not design your code to use shared ownership without a very good reason, [RAII](http://en.cppreference.com/w/cpp/language/raii) principle is a good reason. Other good reason is to avoid expensive copy operations, but you should only do this if the performance benefits are significant, and the underlying object is immutable (i.e. `std::shared_ptr<const Foo>`). If you do use shared ownership, prefer to use `std::shared_ptr`.
 
 Do not use `scoped_ptr` in new code unless you need to be compatible with older versions of C++. Never use `std::auto_ptr`. Instead, use `std::unique_ptr`.
 
@@ -1214,7 +1214,7 @@ We do not use C++ exceptions.
 
 - When you add a throw statement to an existing function, you must examine all of its transitive callers. Either they must make at least the basic exception safety guarantee, or they must never catch the exception and be happy with the program terminating as a result. For instance, if `f()` calls `g()` calls `h()`, and h throws an exception that f catches, g has to be careful or it may not clean up properly.
 - More generally, exceptions make the control flow of programs difficult to evaluate by looking at code: functions may return in places you don't expect. This causes maintainability and debugging difficulties. You can minimize this cost via some rules on how and where exceptions can be used, but at the cost of more that a developer needs to know and understand.
-- Exception safety requires both RAII and different coding practices. Lots of supporting machinery is needed to make writing correct exception-safe code easy. Further, to avoid requiring readers to understand the entire call graph, exception-safe code must isolate logic that writes to persistent state into a "commit" phase. This will have both benefits and costs (perhaps where you're forced to obfuscate code to isolate the commit). Allowing exceptions would force us to always pay those costs even when they're not worth it.
+- Exception safety requires both [RAII](http://en.cppreference.com/w/cpp/language/raii) and different coding practices. Lots of supporting machinery is needed to make writing correct exception-safe code easy. Further, to avoid requiring readers to understand the entire call graph, exception-safe code must isolate logic that writes to persistent state into a "commit" phase. This will have both benefits and costs (perhaps where you're forced to obfuscate code to isolate the commit). Allowing exceptions would force us to always pay those costs even when they're not worth it.
 - Turning on exceptions adds data to each binary produced, increasing compile time (probably slightly) and possibly increasing address space pressure.
 - The availability of exceptions may encourage developers to throw them when they are not appropriate or recover from them when it's not safe to do so. For example, invalid user input should not cause exceptions to be thrown. We would need to make the style guide even longer to document these restrictions!
 
