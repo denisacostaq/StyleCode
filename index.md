@@ -1103,10 +1103,10 @@ Prefer to have single, fixed owners for dynamically allocated objects. Prefer to
 - The performance costs of value semantics are often overestimated, so the performance benefits of ownership transfer might not justify the readability and complexity costs.
 - APIs that transfer ownership force their clients into a single memory management model.
 - Code using smart pointers is less explicit about where the resource releases take place.
-- std::unique_ptr expresses ownership transfer using C++11's move semantics, which are relatively new and may confuse some programmers.
+- `std::unique_ptr` expresses ownership transfer using C++11's move semantics, which are relatively new and may confuse some programmers.
 - Shared ownership can be a tempting alternative to careful ownership design, obfuscating the design of a system.
 - Shared ownership requires explicit bookkeeping at run-time, which can be costly.
-- In some cases (e.g. cyclic references), objects with shared ownership may never be deleted.
+- In some cases (e.g. cyclic references), objects with shared ownership may never be deleted, so be careful, in this case for example you should use [`std::weak_ptr`](http://en.cppreference.com/w/cpp/memory/weak_ptr).
 - Smart pointers are not perfect substitutes for plain pointers.
 
 **Decision:**
