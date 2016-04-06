@@ -2241,9 +2241,9 @@ Use unescoped enum is forbidden, use scoped enum instead. Unescoped enums common
 
 ~~~c
 enum SemaphoreLightColor {
-  Red,
-  Blue,
-  Yellow
+  red,
+  blue,
+  yellow
 };
 ~~~
 
@@ -2251,9 +2251,9 @@ This can collide easily when some body declare a car color enum:
 
 ~~~c
 enum CarColor {
-  Red,
-  Blue,
-  Yellow
+  red,
+  blue,
+  yellow
 };
 ~~~
 
@@ -2261,15 +2261,15 @@ So if you use scoped enums this work ok:
 
 ~~~cpp
 enum class SemaphoreLightColor {
-  Red,
-  Blue,
-  Yellow
+  red,
+  blue,
+  yellow
 };
 
 enum class CarColor {
   Red,
-  Blue,
-  Yellow
+  blue,
+  yellow
 };
 ~~~
 
@@ -2277,19 +2277,19 @@ Because you need to specify te scope of the entri that you are looking for:
 
 ~~~cpp
 //  this names not collide
-SemaphoreLightColor::Red
-CarColor::Red
+SemaphoreLightColor::red
+CarColor::red
 ~~~
 
 When use integers with enums use `static_cast`,
 for example:
 
 ~~~cpp
-std::int32_t car_red = static_cast<std::int32_t>(CarColor::Red);
+std::int32_t car_red = static_cast<std::int32_t>(CarColor::red);
 CarColor car_color = static_cast<CarColor>(car_red);
 ~~~
 
-This improvement is usefull in compiler stage, multiple compiler warning about "unhandled enumeration values" in switch stataments with enums.
+This improvement is usefull in compiler stage, multiple compiler warning about "unhandled enumeration values" in switch stataments with enums. `CarColor` and `SemaphoreLightColor` are types, so name its [as is](#type-names), name the entries(`red, blue, yellow`) as "[common variables](#common-variable-names)"
 
 
 
