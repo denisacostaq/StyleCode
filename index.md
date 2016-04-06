@@ -2237,24 +2237,59 @@ Naming conventions for nested namespaces are at the discretion of the team ownin
 Enumerator Names
 ----------------
 
-Enumerators should be named either like [constants](#constant-names) or like [macros](#macro-names): either `kEnumName` or `ENUM_NAME`.
+Use unescoped enum is forbidden, use scoped enum instead. Unescoped enums commonly collide, for example to represent a red semaphore:
 
-Preferably, the individual enumerators should be named like constants. However, it is also acceptable to name them like macros. The enumeration name, `UrlTableErrors` (and `AlternateUrlTableErrors`), is a type, and therefore mixed case.
-
-~~~cpp
-enum UrlTableErrors {
-  kOK = 0,
-  kErrorOutOfMemory,
-  kErrorMalformedInput,
-};
-enum AlternateUrlTableErrors {
-  OK = 0,
-  OUT_OF_MEMORY = 1,
-  MALFORMED_INPUT = 2,
+~~~c
+enum SemaphoreLightColor {
+  Red,
+  Blue,
+  Yellow
 };
 ~~~
 
-Until January 2009, the style was to name enum values like [macros](#macro-names). This caused problems with name collisions between enum values and macros. Hence, the change to prefer constant-style naming was put in place. New code should prefer constant-style naming if possible. However, there is no reason to change old code to use constant-style names, unless the old names are actually causing a compile-time problem.
+This can collide easily when some body declare a car color enum:
+
+~~~c
+enum CarColor {
+  Red,
+  Blue,
+  Yellow
+};
+~~~
+
+So if you use scoped enums this work ok:
+
+~~~cpp
+enum class SemaphoreLightColor {
+  Red,
+  Blue,
+  Yellow
+};
+
+enum class CarColor {
+  Red,
+  Blue,
+  Yellow
+};
+~~~
+
+Because you need to specify te scope of the entri that you are looking for:
+
+~~~cpp
+//  this names not collide
+SemaphoreLightColor::Red
+CarColor::Red
+~~~
+
+When use integers with enums use `static_cast`,
+for example:
+
+~~~cpp
+std::int32_t car_red = static_cast<std::int32_t>(CarColor::Red);
+CarColor car_color = static_cast<CarColor>(car_red);
+~~~
+
+This improvement is usefull in compiler stage, multiple compiler warning about "unhandled enumeration values" in switch stataments with enums.
 
 
 
