@@ -1401,7 +1401,7 @@ Easier for people to understand how variables are being used. Allows the compile
 `const` variables, data members, methods and arguments add a level of compile-time type checking; it is better to detect errors as soon as possible. Therefore we strongly recommend that you use `const` whenever it makes sense to do so:
 
 - If a function guarantees that it will not modify an argument passed by reference or by pointer, the corresponding function parameter should be a reference-to-const (`const T&`) or pointer-to-const (`const T*`), respectively.
-- Declare methods to be `const` whenever possible. Accessors should almost always be `const`. Other methods should be `const` if they do not modify any data members, do not call any non-const methods, and do not return a non-const pointer or non-const reference to a data member.
+- Declare methods to be `const` whenever possible. Accessors should almost always be `const`, TODO(denisacostaq@gmail): a menos que sea un acceso a recurso, este tenria el prefijo mutable_, de todos modos ver Martin Reddy vs Mayer. Other methods should be `const` if they do not modify any data members, do not call any non-const methods, and do not return a non-const pointer or non-const reference to a data member.
 - Consider making data members `const` whenever they do not need to be modified after construction.
 
 The `mutable` keyword is allowed but is unsafe when used with threads, so thread safety should be carefully considered first.
@@ -2084,20 +2084,18 @@ int cstmr_id;              // Deletes internal letters.
 File Names
 ----------
 
-Filenames should be all lowercase and can include underscores (_) or dashes (-). Follow the convention that your project uses. If there is no consistent local pattern to follow, prefer "_".
+Filenames should be all lowercase and can include underscores (_).
 
 Examples of acceptable file names:
 
 - `my_useful_class.cc`
-- `my-useful-class.cc`
-- `myusefulclass.cc`
-- `myusefulclass_test.cc // _unittest and _regtest are deprecated.`
+- `myusefulclass_test.cc // en a test file with _test`
 
 C++ files should end in `.cc` and header files should end in `.h`. Files that rely on being textually included at specific points should end in `.inc` (see also the section on self-contained headers).
 
 Do not use filenames that already exist in `/usr/include`, such as `db.h`.
 
-In general, make your filenames very specific. For example, use `http_server_logs.h` rather than logs.h. A very common case is to have a pair of files called, e.g., `foo_bar.h` and `foo_bar.cc`, defining a `class` called `FooBar`.
+In general, make your filenames very specific. For example, use `http_server_logs.h` rather than `logs.h`. A very common case is to have a pair of files called, e.g., `foo_bar.h` and `foo_bar.cc`, defining a `class` called `FooBar`.
 
 Inline functions must be in a `.h` file. If your inline functions are very short, they should go directly into your `.h` file.
 
