@@ -1182,7 +1182,7 @@ Variable-length arrays and alloca are not part of Standard C++. More importantly
 
 **Decision:**
 
-Use a safe allocator instead, such as vector or `std::unique_ptr<T[]>`.
+Use a safe allocator instead, such as vector or `std::unique_ptr<T[]>`. Use `std::array` for performance needed.
 
 
 
@@ -1226,9 +1226,10 @@ Given that Google's existing code is not exception-tolerant, the costs of using 
 
 Our advice against using exceptions is not predicated on philosophical or moral grounds, but practical ones. Because we'd like to use our open-source projects at Google and it's difficult to do so if those projects use exceptions, we need to advise against exceptions in Google open-source projects as well. Things would probably be different if we had to do it all over again from scratch.
 
-This prohibition also applies to the exception-related features added in C++11, such as `noexcept`, `std::exception_ptr`, and `std::nested_exception`.
+This prohibition also applies to the exception-related features added in C++11, such as `std::exception_ptr`, `std::nested_exception`, etc.
 
-There is an [exception](#windows-code) to this rule (no pun intended) for Windows code.
+An "excpection" to this rules are `noexcept`, you are allowed(and should) to use `noexcept` where appropriate, se Item 14, Effective Modern C++, Mayers.
+TODO(denisacostaq@gmail): ver el uso de noexcept para sistemas criticos, hardware excpetion and so on... There is other [exception](#windows-code) to this rule (no pun intended) for Windows code.
 
 
 
@@ -1439,7 +1440,7 @@ Prematurely marking something as `constexpr` may cause migration problems if lat
 Integer Types
 -------------
 
-Of the built-in C++ integer types, the only one used is `int`. If a program needs a variable of a different size, use a precise-width integer type from `<stdint.h>`, such as `int16_t`. If your variable represents a value that could ever be greater than or equal to 2^31 (2GiB), use a 64-bit type such as `int64_t`. Keep in mind that even if your value won't ever be too large for an int, it may be used in intermediate calculations which may require a larger type. When in doubt, choose a larger type.
+Use a precise-width integer type from `<cstdint>`, such as `std::int_32`, `std::int16_t`, ... If your variable represents a value that could ever be greater than or equal to 2^31 (2GiB), use a 64-bit type such as `int64_t`. Keep in mind that even if your value won't ever be too large for an int, it may be used in intermediate calculations which may require a larger type. When in doubt, choose a larger type.
 
 **Definition:**
 
@@ -1455,13 +1456,11 @@ The sizes of integral types in C++ can vary based on compiler and architecture.
 
 **Decision:**
 
-`<stdint.h>` defines types like `int16_t`, `uint32_t`, `int64_t`, etc. You should always use those in preference to short, unsigned long long and the like, when you need a guarantee on the size of an integer. Of the C integer types, only int should be used. When appropriate, you are welcome to use standard types like `size_t` and `ptrdiff_t`.
+`<cstdint>` defines types like `std::int16_t`, `std::uint32_t`, `std::int64_t`, etc. You should always use those in preference to short, unsigned long long and the like, when you need a guarantee on the size of an integer. When appropriate, you are welcome to use standard types like `size_t` and `ptrdiff_t`.
 
-We use `int` very often, for integers we know are not going to be too big, e.g., loop counters. Use plain old int for such things. You should assume that an int is at least 32 bits, but don't assume that it has more than 32 bits. If you need a 64-bit integer type, use `int64_t` or `uint64_t`.
+If you need a 64-bit integer type, use `std::int64_t` or `std::uint64_t`.
 
-For integers we know can be "big", use `int64_t`.
-
-You should not use the unsigned integer types such as `uint32_t`, unless there is a valid reason such as representing a bit pattern rather than a number, or you need defined overflow modulo 2^N. In particular, do not use unsigned types to say a number will never be negative. Instead, use assertions for this.
+For integers we know can be "big", use `int64_t`. You should not use the unsigned integer types such as `std::uint32_t`, unless there is a valid reason such as representing a bit pattern rather than a number, or you need defined overflow modulo 2^N. In particular, do not use unsigned types to say a number will never be negative. Instead, use assertions for this.
 
 If your code is a container that returns a size, be sure to use a type that will accommodate any possible usage of your container. When in doubt, use a larger type rather than a smaller type.
 
@@ -1648,20 +1647,21 @@ it may not be obvious what i's type is, if x was declared hundreds of lines earl
 
 Programmers have to understand the difference between `auto` and `const auto&` or they'll get copies when they didn't mean to.
 
-The interaction between auto and C++11 brace-initialization can be confusing. The exact rules have been in flux, and compilers don't all implement the final rules yet. The declarations:
+The interaction between `auto` and C++11 brace-initialization can be confusing. The exact rules have been in flux, and compilers don't all implement the final rules yet. The declarations:
 
 ~~~cpp
 auto x{3};
 auto y = {3};
 ~~~
 
-mean different things — `x` is an `int`, while y is a `std::initializer_list<int>`. The same applies to other normally-invisible proxy types.
+mean different things — `x` is an `int`, while y is a `std::initializer_list<int>`FIXME(denisacostaq@gmail): Item 2: Understand auto type deduction. Effective Modern C++.Meyer. The same applies to other normally-invisible proxy types(eg: Item 6: Use the explicitly typed initializer idiom when `auto` deduces undesired types. Effective Modern C++. Meyer).
 
 If an `auto` variable is used as part of an interface, e.g. as a constant in a header, then a programmer might change its type while only intending to change its value, leading to a more radical API change than intended.
 
 **Decision:**
 
 `auto` is permitted, for local variables only. Do not use `auto` for file-scope or namespace-scope variables, or for class members. Never initialize an auto-typed variable with a braced initializer list. 
+TODO(denisacostaq@gmail.com): El auto se usa tambien para parametros de captura en lambda en c++ 14 nama creo.
 
 
 
