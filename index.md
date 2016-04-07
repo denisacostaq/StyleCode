@@ -2398,7 +2398,7 @@ Declaration comments describe use of the function; comments at the definition of
 
 #### Function Declarations ####
 
-Every function declaration should have comments immediately preceding it that describe what the function does and how to use it. These comments should be descriptive ("Opens the file") rather than imperative ("Open the file"); the comment describes the function, it does not tell the function what to do. In general, these comments do not describe how the function performs its task. Instead, that should be left to comments in the function definition.
+Every public function declaration should have comments immediately preceding it that describe what the function does and how to use it(but without unnecessarily verbose, see below). These comments should be descriptive ("Opens the file") rather than imperative ("Open the file"); the comment describes the function, it does not tell the function what to do. In general, these comments do not describe how the function performs its task. Instead, that should be left to comments in the function definition.
 
 Types of things to mention in comments at the function declaration:
 
