@@ -2351,7 +2351,7 @@ Start each file with license boilerplate, followed by a description of its conte
 
 #### Legal Notice and Author Line ####
 
-Every file should contain license boilerplate. Choose the appropriate boilerplate for the license used by the project (for example, Apache 2.0, BSD, LGPL, GPL).
+Every file should contain the [license boilerplate](http://proyecto-ciaa.com.ar/devwiki/doku.php?id=licencia_ciaa).
 
 If you make significant changes to a file with an author line, consider deleting the author line.
 
