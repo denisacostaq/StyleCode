@@ -510,7 +510,7 @@ Likewise, global and static variables are destroyed when the program terminates,
 
 One way to alleviate the destructor problem is to terminate the program by calling `quick_exit()` instead of e`xit()`. The difference is that `quick_exit()` does not invoke destructors and does not invoke any handlers that were registered by calling `atexit()`. If you have a handler that needs to run when a program terminates via `quick_exit()` (flushing logs, for example), you can register it using `at_quick_exit()`. (If you have a handler that needs to run at both `exit()` and `quick_exit()`, you need to register it in both places.)
 
-The following is a singleton implementation that is ok, according the previous restrictions.
+The following is a singleton implementation [that is ok][martin-reddy], according the previous restrictions.
 
 ~~~cpp
 class Single {
@@ -570,6 +570,8 @@ The problems with doing work in constructors are:
 **Decision:**
 
 Constructors should never call virtual functions. If appropriate for your code , terminating the program may be an appropriate error handling response. Otherwise, consider a factory function or `Init()` method. Avoid `Init()` methods on objects with no other states that affect which public methods may be called (semi-constructed objects of this form are particularly hard to work with correctly).
+
+Take a policy of always listing every data member on the constructor initialization list. To avoid having to memorize when data members must be initialized in the member initialization list and when it’s optional, the easiest choice is to always use the initialization list. It’s sometimes required, and it’s often more efficient than assignments. To avoid the possibility of some truly obscure behavioral bugs, always list members in the initialization list in the same order as they’re declared in the class.([see Item 4][mayers1]).
 
 
 
@@ -3526,6 +3528,6 @@ OK, enough writing about writing code; the code itself is much more interesting.
 [proyecto-MIORGANIZACION]: http://proyecto-MIORGANIZACION.com.ar/ "Proyecto MIORGANIZACION"
 [mayers1]: http://www.amazon.com/dp/0321334876/?tag=stackoverfl08-20 "Effective C++. Third Edition. Scott Meyers"
 
+[mayers2]: http://www.amazon.com/dp/1491903996/?tag=stackoverfl08-20 "Effective Modern C++, Scott Mayers"
 
-
-[mayers2]: http://rads.stackoverflow.com/amzn/click/1491903996 "TODO(denisacostaq@gmail): put real fina link here. Effective Modern C++, Scott Mayers"
+[martin-reddy]: http://www.amazon.com/dp/0123850037/?tag=stackoverfl08-20 "API Design for C++. Martin Reddy. section: 3.2 SINGLETON"
