@@ -498,19 +498,41 @@ Static and Global Variables
 ---------------------------
 
 
-Variables of class type with [static storage duration](http://en.cppreference.com/w/cpp/language/storage_duration#Storage_duration) are forbidden: they cause hard-to-find bugs due to indeterminate order of construction and destruction. However, such variables are allowed if they are constexpr: they have no dynamic initialization or destruction.
+Variables of class type with [static storage duration](http://en.cppreference.com/w/cpp/language/storage_duration#Storage_duration) are forbidden in many cases(read for details): they cause hard-to-find bugs due to indeterminate order of construction and destruction. Such variables are allowed if they are `constexpr`: they have no dynamic initialization or destruction.
 
-Objects with static storage duration, including global variables, static variables, static class member variables, and function static variables, must be Plain Old Data (POD): only ints, chars, floats, or pointers, or arrays/structs of POD.
-
-The order in which class constructors and initializers for static variables are called is only partially specified in C++ and can even change from build to build, which can cause bugs that are difficult to find. Therefore in addition to banning globals of class type, we do not allow namespace-scope static variables to be initialized with the result of a function, unless that function (such as getenv(), or getpid()) does not itself depend on any other globals. However, a static POD variable within function scope may be initialized with the result of a function, since its initialization order is well-defined and does not occur until control passes through its declaration.
-
-Likewise, global and static variables are destroyed when the program terminates, regardless of whether the termination is by returning from `main()` or by calling `exit()`. The order in which destructors are called is defined to be the reverse of the order in which the constructors were called. Since constructor order is indeterminate, so is destructor order. For example, at program-end time a static variable might have been destroyed, but code still running — perhaps in another thread — tries to access it and fails. Or the destructor for a static string variable might be run prior to the destructor for another variable that contains a reference to that string.
-
-One way to alleviate the destructor problem is to terminate the program by calling `quick_exit()` instead of `exit()`. The difference is that `quick_exit()` does not invoke destructors and does not invoke any handlers that were registered by calling atexit(). If you have a handler that needs to run when a program terminates via quick_exit() (flushing logs, for example), you can register it using `at_quick_exit()`. (If you have a handler that needs to run at both `exit()` and `quick_exit()`, you need to register it in both places.)
-
-As a result we only allow static variables to contain POD data. This rule completely disallows vector (use C arrays instead), or string (use `const char []`).
+Objects with `static` storage duration, including global(included `namespace`s) variables, static variables and static class member variables, must be Plain Old Data (POD): only `int`s, `char`s, `float`s, or pointers, or arrays/`struct`s of POD, for this scopes we only allow static variables to contain POD data. This rule completely disallows `vector` (use C arrays instead), or `string` (use `const char []`). For no POD data you can use static storage duration for locals objects only; static objects inside functions are known as local static objects (because they’re local to a function), and the other kinds of static objects are known as non-local static objects([Item 4, Meyers][mayers1]), so you can not use static for globals.
 
 If you need a static or global variable of a class type, consider initializing a pointer (which will never be freed), from either your `main()` function or from `pthread_once()`. Note that this must be a raw pointer, not a "smart" pointer, since the smart pointer's destructor will have the order-of-destructor issue that we are trying to avoid.
+
+The order in which class constructors and initializers for static variables are called is only partially specified in C++ and can even change from build to build, which can cause bugs that are difficult to find. Therefore in addition to banning globals of class type, we do not allow namespace-scope static variables to be initialized with the result of a function, unless that function (such as `getenv()`, or `getpid()`) does not itself depend on any other globals. However, a static POD variable within function scope may be initialized with the result of a function, since its initialization order is well-defined and does not occur until control passes through its declaration.
+
+Likewise, global and static variables are destroyed when the program terminates, regardless of whether the termination is by returning from `main()` or by `calling exit()`. The order in which destructors are called is defined to be the reverse of the order in which the constructors were called. Since constructor order is indeterminate, so is destructor order. For example, at program-end time a static variable might have been destroyed, but code still running — perhaps in another thread — tries to access it and fails. Or the destructor for a static string variable might be run prior to the destructor for another variable that contains a reference to that string.
+
+One way to alleviate the destructor problem is to terminate the program by calling `quick_exit()` instead of e`xit()`. The difference is that `quick_exit()` does not invoke destructors and does not invoke any handlers that were registered by calling `atexit()`. If you have a handler that needs to run when a program terminates via `quick_exit()` (flushing logs, for example), you can register it using `at_quick_exit()`. (If you have a handler that needs to run at both `exit()` and `quick_exit()`, you need to register it in both places.)
+
+The following is a singleton implementation that is ok, according the previous restrictions.
+
+~~~cpp
+class Single {
+ public:
+  // TODO(denisacostaq@gmail): Ver como afectan los move la singlotenidad.
+  Single(Single &&) = delete;
+  Single& operator=(Single &&) = delete;
+  static Single& getInstance() {
+    // NOTE(denisacostaq@gmail):
+    // It **is** thread-safe in C++11 if the default constructor is thread-safe,
+    // i.e it doesn't accesses any modifiable shared resource internally
+    static Single single;
+    return single;
+  }
+
+ private:
+  Single() = default;
+  ~Single() = default;  // NOTE(denisacostaq@gmail): Do not try to destroy my instance.
+  Single(const Single&) = delete;
+  Single& operator=(const Single&) = delete;
+};
+~~~
 
 
 
@@ -561,6 +583,21 @@ Do not define implicit conversions. Use the `explicit` keyword for conversion op
 Implicit conversions allow an object of one type (called the source type) to be used where a different type (called the destination type) is expected, such as when passing an int argument to a function that takes a double parameter.
 
 In addition to the implicit conversions defined by the language, users can define their own, by adding appropriate members to the class definition of the source or destination type. An implicit conversion in the source type is defined by a type conversion operator named after the destination type (e.g. `operator bool()`). An implicit conversion in the destination type is defined by a converting constructor, which is a constructor that can take the source type as its only argument. Note that a multi-parameter constructor can still be a converting constructor, if all but the first parameter have default values.
+
+TODO(denisacostaq@gmail): 
+verificar este ejemplo, k no deberia compilarqqqqqq:
+
+~~~c
+class Pepe {
+ public:
+  explicit Pepe(const int& tam) {}
+};
+
+int main(int argc, char* argv[]) {
+  Pepe p(34.3f);
+  return 0;
+}
+~~~
 
 The `explicit` keyword can be applied to a constructor or (since C++11) a conversion operator, to ensure that it can only be used when the destination type is explicit at the point of use, e.g. with a cast. This applies not only to implicit conversions, but to C++11's list initialization syntax:
 
@@ -1228,7 +1265,7 @@ Our advice against using exceptions is not predicated on philosophical or moral 
 
 This prohibition also applies to the exception-related features added in C++11, such as `std::exception_ptr`, `std::nested_exception`, etc.
 
-An "excpection" to this rules are `noexcept`, you are allowed(and should) to use `noexcept` where appropriate, se Item 14, Effective Modern C++, Mayers.
+An "excpection" to this rules are `noexcept`, you are allowed(and should) to use `noexcept` where appropriate, [see Item 14][mayers2].
 TODO(denisacostaq@gmail): ver el uso de noexcept para sistemas criticos, hardware excpetion and so on... There is other [exception](#windows-code) to this rule (no pun intended) for Windows code.
 
 
@@ -3487,3 +3524,8 @@ OK, enough writing about writing code; the code itself is much more interesting.
 ********************************
 
 [proyecto-MIORGANIZACION]: http://proyecto-MIORGANIZACION.com.ar/ "Proyecto MIORGANIZACION"
+[mayers1]: http://www.amazon.com/dp/0321334876/?tag=stackoverfl08-20 "Effective C++. Third Edition. Scott Meyers"
+
+
+
+[mayers2]: http://rads.stackoverflow.com/amzn/click/1491903996 "TODO(denisacostaq@gmail): put real fina link here. Effective Modern C++, Scott Mayers"
